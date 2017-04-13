@@ -5,7 +5,7 @@ from sqlalchemy import or_
 from sqlalchemy import text
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/example'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://oorjan:oorjan@localhost/example'
 db = SQLAlchemy(app)
 
 
@@ -53,9 +53,9 @@ class EmailInfo(db.Model):
     emailid = db.Column(db.String(40))
 
 
-    def __init__(self, solarid,emailid):
+    def __init__(self, solarid, emailid):
         self.solarid = solarid
-        self.emailid = emailId
+        self.emailid = emailid
 
     def __repr__(self):
         return ""
@@ -73,7 +73,6 @@ def lowPerformance(solar_id):
 def lowPerformanceList(date, solarid):
 
 
-    print(date)
 
 
     sql = text('select dc from data where solarid ' + '=' + str(solarid) + ' and cast(timestamp as date) =\'' + str(datetime.datetime.strptime(date, '%d-%m-%Y')).split(" ")[0]+'\'')
@@ -147,13 +146,15 @@ def addData():
 def addEmail():
     solarId = request.form['solarid']
     emailId = request.form['emailid']
-    emailInfo = EmailInfo(solarid,emailId)
+    emailInfo = EmailInfo(solarId,emailId)
     db.session.add(emailInfo)
     db.session.commit()
 
     return "email data added"
 
-
+@app.route("/test")
+def hello():
+    return "Hello World!"
 
 if __name__ == '__main__':
     app.debug = False

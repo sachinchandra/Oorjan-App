@@ -5,8 +5,10 @@ import psycopg2
 from collections import OrderedDict
 import smtplib
 from email.mime.text import MIMEText
+import sys
+sys.path.insert(0, '/var/www/html/flaskapp')
 
-conn = psycopg2.connect(database="example", host="127.0.0.1", port="5432")
+conn = psycopg2.connect(database="example", user='oorjan', password='oorjan', host="127.0.0.1", port="5432")
 
 cur = conn.cursor()
 
@@ -26,8 +28,7 @@ params = OrderedDict([('date',newformat)])
 # Make request and get statuses for mailing
 finalEmails = []
 for solarid in solaremailids:
-	r = requests.get("http://127.0.0.1:5000/"+ str(solarid[0]), params)
-	
+	r = requests.get("http://localhost/{}".format(solarid[0]), params=params)
 	finalEmails.append({'Subject': "underperforming hours of your solar panel",
 					   'Message': r.text,
 					   'To' : solarid[1]})
