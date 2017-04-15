@@ -1,4 +1,4 @@
-production = False
+production = True
 
 if production:
     db_name = 'oorjan'
