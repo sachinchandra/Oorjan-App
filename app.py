@@ -103,16 +103,15 @@ def low_performance(solar_id):
 def low_performance_list(date, solar_id):
 
     sql_data = text('select dc from data where solarid ' + '=' + str(solar_id) + ' and cast(timestamp as date) =\'' +
-               str(datetime.datetime.strptime(date, '%d-%m-%Y')).split(" ")[0] + '\'')
-    
+                    str(datetime.datetime.strptime(date, '%d-%m-%Y')).split(" ")[0] + '\'')
+
     result_data = db.engine.execute(sql_data)
     dc = []
     for row in result_data:
         dc.append(row[0])
 
-    
-
-    sql_location = text('select location from data where solarid ' + '=' + str(solar_id))
+    sql_location = text(
+        'select location from data where solarid ' + '=' + str(solar_id))
 
     result_location = db.engine.execute(sql_location)
 
@@ -120,26 +119,21 @@ def low_performance_list(date, solar_id):
     for row in result_location:
         location = row[0]
 
-    
-
     sql_reference_data = text('select dc from referencedata where location ' + '=' + str(location) + ' and cast(timestamp as date) =\'' +
-               str(datetime.datetime.strptime(date, '%d-%m-%Y')).split(" ")[0] + '\'')
+                              str(datetime.datetime.strptime(date, '%d-%m-%Y')).split(" ")[0] + '\'')
 
     result_reference_data = db.engine.execute(sql_reference_data)
     dc_reference = []
     for row in result_reference_data:
         dc_reference.append(row[0])
 
-    
-
     low_performance_hours = []
     for index in range(len(dc_reference)):
-        if (dc_reference[index] !=0  and dc[index] <= 0.8 * float(dc_reference[index])):
-            low_performance_hours.append(str(index) + ":00 - " + str(index + 1) + ":00" + "  referencedc=" + str(dc_reference[index])+ "     originaldc=" + str(dc[index]))
-    
+        if (dc_reference[index] != 0 and dc[index] <= 0.8 * float(dc_reference[index])):
+            low_performance_hours.append(str(index) + ":00 - " + str(index + 1) + ":00" +
+                                         "  referencedc=" + str(dc_reference[index]) + "     originaldc=" + str(dc[index]))
 
     return low_performance_hours
-
 
 
 # Add reference data for a city
@@ -174,12 +168,11 @@ def add_data():
         timestamp = request.form['timestamp']
         is_reference_data = request.form['isreferencedata']
 
-
         if is_reference_data.lower() in ['yes', 'true', 't', 'y']:
-            dc_reference_info = DcReferenceInfo(location, city , dc, timestamp)
+            dc_reference_info = DcReferenceInfo(location, city, dc, timestamp)
             db.session.add(dc_reference_info)
             db.session.commit()
-        else :
+        else:
             dc_info = DcInfo(location, city, solar_id, dc, timestamp)
             db.session.add(dc_info)
             db.session.commit()
@@ -203,12 +196,13 @@ def add_email():
 
         return "email data added"
     except DataError as e:
-            return 'Invalid input params', 400
+        return 'Invalid input params', 400
 
 
 @app.route("/test")
 def hello():
     return "app working!"
+
 
 if __name__ == '__main__':
     app.debug = False

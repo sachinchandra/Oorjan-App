@@ -1,7 +1,8 @@
 import psycopg2
 from conf import db_name, db_port, db_host, db_user, db_password
 
-conn = psycopg2.connect(database=db_name, host=db_host, port=db_port, user=db_user, password=db_password)
+conn = psycopg2.connect(database=db_name, host=db_host,
+                        port=db_port, user=db_user, password=db_password)
 
 
 cur = conn.cursor()

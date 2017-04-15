@@ -28,5 +28,5 @@ for fname in glob.glob(path):
                               data={'location': location, 'city': city,
                                     'solarid': "", 'dc': d,
                                     'timestamp': datetime_object,
-                                    'isreferencedata' : is_reference_data})
+                                    'isreferencedata': is_reference_data})
             datetime_object = datetime_object + timedelta(hours=1)

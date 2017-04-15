@@ -11,7 +11,7 @@ folder = sys.argv[-2]
 is_reference_data = sys.argv[-1].lower() in ('yes', 'true', 't', 'y')
 
 path = os.path.join(folder, "*.json")
-for i, fname in enumerate(glob.glob(path)): 
+for i, fname in enumerate(glob.glob(path)):
     data = json.load(open(fname))
     dc_data = data['outputs']['dc']
 
@@ -21,7 +21,7 @@ for i, fname in enumerate(glob.glob(path)):
     dc_std = np.std(dc_data, axis=0)
 
     sample = np.random.normal(dc_mean, dc_std, size=(365, 24))
-    sample[sample<0] = 0
+    sample[sample < 0] = 0
 
     dc_sample = list(sample.flatten())
 
@@ -32,8 +32,8 @@ for i, fname in enumerate(glob.glob(path)):
 
     for d in dc_sample:
         r = requests.post("http://{host}:{port}/adddata".format(host=api_host, port=api_port),
-                              data={'location': location, 'city': city,
-                                    'solarid': i+ 1, 'dc': d,
-                                    'timestamp': datetime_object,
-                                    'isreferencedata' : is_reference_data})
-        datetime_object = datetime_object + timedelta(hours = 1)
+                          data={'location': location, 'city': city,
+                                'solarid': i + 1, 'dc': d,
+                                'timestamp': datetime_object,
+                                'isreferencedata': is_reference_data})
+        datetime_object = datetime_object + timedelta(hours=1)
