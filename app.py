@@ -93,7 +93,7 @@ def low_performance(solar_id):
         return "underperforming hours \n" + '\n'.join(final_list)
     except ValueError as e:
         return str(e), 404
-    except DataError:
+    except (DataError, TypeError):
         return 'Invalid input params', 400
 
 
