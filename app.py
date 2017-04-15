@@ -3,15 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 import datetime
 from sqlalchemy import or_
 from sqlalchemy import text
+from sqlalchemy.exc import DataError, IntegrityError, ProgrammingError
+from conf import db_url
 
 app = Flask(__name__)
-app.config[
-    'SQLALCHEMY_DATABASE_URI'] = 'postgresql://oorjan:oorjan@localhost/example'
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 db = SQLAlchemy(app)
 
 
-class ReferenceData(db.Model):
-    __tablename__ = "referencedata"
+class CityInfo(db.Model):
+    __tablename__ = "cityinfo"
     latitude = db.Column(db.Numeric)
     longitude = db.Column(db.Numeric)
     systemcapacity = db.Column(db.String(120))
@@ -24,6 +25,24 @@ class ReferenceData(db.Model):
         self.systemcapacity = systemcapacity
         self.cityname = cityname
         self.cityid = cityid
+
+    def __repr__(self):
+        return ""
+
+
+class DcReferenceInfo(db.Model):
+    __tablename__ = "referencedata"
+    id = db.Column(db.Integer, primary_key=True)
+    location = db.Column(db.Integer, nullable=False)
+    city = db.Column(db.String(40))
+    dc = db.Column(db.Numeric, primary_key=True)
+    timestamp = db.Column(db.DateTime)
+
+    def __init__(self, location, city, dc, timestamp):
+        self.location = location
+        self.city = city
+        self.dc = dc
+        self.timestamp = timestamp
 
     def __repr__(self):
         return ""
@@ -66,99 +85,130 @@ class EmailInfo(db.Model):
 
 
 @app.route('/<int:solar_id>/')
-def lowPerformance(solar_id):
+def low_performance(solar_id):
     date = request.args.get('date')
-    finalList = lowPerformanceList(date, solar_id)
 
-    return "underperforming hours \n" + '\n'.join(finalList)
+    try:
+        final_list = low_performance_list(date, solar_id)
+        return "underperforming hours \n" + '\n'.join(final_list)
+    except ValueError as e:
+        return str(e), 404
+    except DataError:
+        return 'Invalid input params', 400
+
 
 # finding list of all underperforming hours
 
 
-def lowPerformanceList(date, solarid):
+def low_performance_list(date, solar_id):
 
-    sql = text('select dc from data where solarid ' + '=' + str(solarid) + ' and cast(timestamp as date) =\'' +
+    sql_data = text('select dc from data where solarid ' + '=' + str(solar_id) + ' and cast(timestamp as date) =\'' +
                str(datetime.datetime.strptime(date, '%d-%m-%Y')).split(" ")[0] + '\'')
-
-    result = db.engine.execute(sql)
+    
+    result_data = db.engine.execute(sql_data)
     dc = []
-    for row in result:
+    for row in result_data:
         dc.append(row[0])
 
-    sql1 = text('select location from data where solarid = ' + str(solarid))
-    result1 = db.engine.execute(sql1)
+    
 
-    for val1 in result1:
-        location = val1[0]
+    sql_location = text('select location from data where solarid ' + '=' + str(solar_id))
 
-    sql2 = text(
-        'select systemcapacity from referencedata where cityid =' + str(location))
-    result2 = db.engine.execute(sql2)
+    result_location = db.engine.execute(sql_location)
 
-    for val2 in result2:
-        referenceValue = val2[0]
+    location = 0
+    for row in result_location:
+        location = row[0]
 
-    lowPerformanceHours = []
-    i = 0
-    for val in dc:
+    
 
-        if val <= 0.8 * float(referenceValue):
+    sql_reference_data = text('select dc from referencedata where location ' + '=' + str(location) + ' and cast(timestamp as date) =\'' +
+               str(datetime.datetime.strptime(date, '%d-%m-%Y')).split(" ")[0] + '\'')
 
-            lowPerformanceHours.append(str(i) + ":00 - " + str(i + 1) + ":00")
-        i = i + 1
+    result_reference_data = db.engine.execute(sql_reference_data)
+    dc_reference = []
+    for row in result_reference_data:
+        dc_reference.append(row[0])
 
-    return lowPerformanceHours
+    
+
+    low_performance_hours = []
+    for index in range(len(dc_reference)):
+        if (dc_reference[index] !=0  and dc[index] <= 0.8 * float(dc_reference[index])):
+            low_performance_hours.append(str(index) + ":00 - " + str(index + 1) + ":00" + "  referencedc=" + str(dc_reference[index])+ "     originaldc=" + str(dc[index]))
+    
+
+    return low_performance_hours
+
 
 
 # Add reference data for a city
 
-@app.route("/addReference", methods=['POST'])
-def addReference():
-    latitude = request.form['latitude']
-    longitude = request.form['longitude']
-    systemCapacity = request.form['systemcapacity']
-    cityName = request.form['cityname']
-    cityId = request.form['cityid']
-    referenceData = ReferenceData(
-        latitude, longitude, systemCapacity, cityName, cityId)
-    db.session.add(referenceData)
-    db.session.commit()
+@app.route("/addcityinfo", methods=['POST'])
+def add_reference():
+    try:
+        latitude = request.form['latitude']
+        longitude = request.form['longitude']
+        system_capacity = request.form['systemcapacity']
+        city_name = request.form['cityname']
+        city_id = request.form['cityid']
+        city_info = CityInfo(
+            latitude, longitude, system_capacity, city_name, city_id)
+        db.session.add(city_info)
+        db.session.commit()
 
-    return "reference data added"
+        return "cityInfo data added"
+    except DataError:
+        return 'Invalid input params', 400
 
 # Add hourly data
 
 
-@app.route("/addData", methods=['POST'])
-def addData():
-    location = request.form['location']
-    city = request.form['city']
-    solarId = request.form['solarid']
-    dc = request.form['dc']
-    timeStamp = request.form['timestamp']
-    dcInfo = DcInfo(location, city, solarId, dc, timeStamp)
-    db.session.add(dcInfo)
-    db.session.commit()
+@app.route("/adddata", methods=['POST'])
+def add_data():
+    try:
+        location = request.form['location']
+        city = request.form['city']
+        solar_id = request.form['solarid']
+        dc = request.form['dc']
+        timestamp = request.form['timestamp']
+        is_reference_data = request.form['isreferencedata']
 
-    return "hourly data added"
+
+        if is_reference_data.lower() in ['yes', 'true', 't', 'y']:
+            dc_reference_info = DcReferenceInfo(location, city , dc, timestamp)
+            db.session.add(dc_reference_info)
+            db.session.commit()
+        else :
+            dc_info = DcInfo(location, city, solar_id, dc, timestamp)
+            db.session.add(dc_info)
+            db.session.commit()
+
+        return "hourly data added"
+    except DataError as e:
+        return 'Invalid input params', 400
+
 
 # Add email linked to a solar panel
 
 
-@app.route("/addEmail", methods=['POST'])
-def addEmail():
-    solarId = request.form['solarid']
-    emailId = request.form['emailid']
-    emailInfo = EmailInfo(solarId, emailId)
-    db.session.add(emailInfo)
-    db.session.commit()
+@app.route("/addemail", methods=['POST'])
+def add_email():
+    try:
+        solar_id = request.form['solarid']
+        email_id = request.form['emailid']
+        email_info = EmailInfo(solar_id, email_id)
+        db.session.add(email_info)
+        db.session.commit()
 
-    return "email data added"
+        return "email data added"
+    except DataError as e:
+            return 'Invalid input params', 400
 
 
 @app.route("/test")
 def hello():
-    return "Hello World!"
+    return "app working!"
 
 if __name__ == '__main__':
     app.debug = False

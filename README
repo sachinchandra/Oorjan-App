@@ -1,0 +1,12 @@
+1 Install requirements.txt
+1 .install postgresql with user oorjan and password oorjan
+
+database setup
+
+2. run create_tables.py to create tables 
+3. run db_populate.py to save reference data to db
+3. run data_generate.py to save generated data to db
+
+#start service
+4. run app.py to start the service
+5. you can now use apis.
