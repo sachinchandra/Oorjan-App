@@ -1,4 +1,4 @@
-production = False
+production = True
 
 if production:
     db_name = 'oorjan'
@@ -7,7 +7,7 @@ if production:
     db_user = 'oorjan'
     db_password = 'oorjan'
     db_url = "postgresql://{user}:{password}@{host}/{dbname}".format(user=db_user, password=db_password,
-                                                                     host=db_host, nme=db_name)
+                                                                     host=db_host, dbname=db_name)
     api_host = "localhost"
     api_port = 80
 else:
